@@ -1,0 +1,62 @@
+from openai import OpenAI, OpenAIError
+
+# Modify OpenAI's API key and API base to use vLLM's API server.
+openai_api_key = "token-123"
+openai_api_base = "http://192.168.108.4:8888/v1"
+
+client = OpenAI(
+    # defaults to os.environ.get("OPENAI_API_KEY")
+    api_key=openai_api_key,
+    base_url=openai_api_base,
+)
+
+models = client.models.list()
+model = models.data[0].id
+
+noHistory = False
+user_messages = []
+
+
+def remove_suffix(s, suffix):
+    # 如果字符串以指定后缀结尾，则去掉它
+    if s.endswith(suffix):
+        return s[:-len(suffix)]
+    return s  # 如果不存在指定后缀，则返回原字符串
+
+
+def generate_response(messages):
+    try:
+        completion = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.7
+        )
+        return completion.choices[0].message.content.rstrip('\r\n')
+    except OpenAIError as e:
+        print(f"请求失败:{e}")
+        return None
+
+
+while True:
+    user_input = input("User: ")
+
+    if noHistory:
+        user_messages.clear()
+
+    # 最大历史会话数
+    if len(user_messages) >= 20:
+        user_messages.clear()
+
+    if user_input.lower() in ["quit", "exit", "bey"]:
+        print("Assistant:回见！您内。")
+        break
+
+    # 添加用户消息到会话
+    user_messages.append({"role": "user", "content": user_input})
+
+    response = generate_response(user_messages)
+    if response:
+        print(f"Assistant:{response}")
+
+    # 添加AI消息到会话
+    user_messages.append({"role": "assistant", "content": remove_suffix(response, "<|im_end|>")})
