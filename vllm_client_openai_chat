@@ -1,0 +1,36 @@
+from openai import OpenAI
+
+# Modify OpenAI's API key and API base to use vLLM's API server.
+openai_api_key = "token-123"
+openai_api_base = "http://192.168.108.4:8888/v1"
+
+client = OpenAI(
+    # defaults to os.environ.get("OPENAI_API_KEY")
+    api_key=openai_api_key,
+    base_url=openai_api_base,
+)
+
+models = client.models.list()
+model = models.data[0].id
+
+chat_completion = client.chat.completions.create(
+    messages=[{
+        "role": "system",
+        "content": "You are a helpful assistant."
+    }, {
+        "role": "user",
+        "content": "陕西省会在哪里?"
+    }, {
+        "role":
+        "assistant",
+        "content":
+        "这里有什么好吃的？"
+    }, {
+        "role": "user",
+        "content": "这里有什么建筑？"
+    }],
+    model=model
+)
+
+print("Chat completion results:")
+print(chat_completion)
